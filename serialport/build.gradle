@@ -1,47 +1,53 @@
 apply plugin: 'com.android.library'
 
+group = "com.github.android"
+//artifactId = "android-serialport"
+version = "1.9.1-SNAPSHOT"
 
 android {
-    compileSdkVersion rootProject.ext.compileSdkVersion
+  compileSdkVersion rootProject.ext.compileSdkVersion
 
-    defaultConfig {
-        minSdkVersion rootProject.ext.minSdkVersion
-        targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName rootProject.ext.versionName
+  defaultConfig {
+    minSdkVersion rootProject.ext.minSdkVersion
+    targetSdkVersion rootProject.ext.targetSdkVersion
+    versionCode 1
+    versionName rootProject.ext.versionName
 
-        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+    testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+  }
+  buildTypes {
+    release {
+      minifyEnabled false
+      proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
     }
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
+  }
+  externalNativeBuild {
+    cmake {
+      path 'CMakeLists.txt'
+      //version "3.18.1"
+      version "3.30.5"
     }
-    externalNativeBuild {
-        cmake {
-            path 'CMakeLists.txt'
-            version "3.18.1"
-        }
+  }
+  packagingOptions {
+    jniLibs {
+      useLegacyPackaging true
     }
-    packagingOptions {
-        jniLibs {
-            useLegacyPackaging true
-        }
-    }
+  }
 }
 
 dependencies {
-//    compile fileTree(dir: 'libs', include: ['*.jar'])
-//    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
-//        exclude group: 'com.android.support', module: 'support-annotations'
-//    })
-//    compile 'com.android.support:appcompat-v7:25.3.0'
-//    testCompile 'junit:junit:4.12'
-
-
-    api "androidx.annotation:annotation:1.1.0"
+  implementation "androidx.annotation:annotation:1.6.0"
 }
 
-apply from: '../maven_publish.gradle'
+ext {
+  groupId = "${group}"
+  versionId = "$version"
+  pkgType = "aar"
+  //artifactId = "$project.name"
+  artifactId = "android-serialport"
+  description = "$project.description"
+}
+
+//apply from: '../maven_publish.gradle'
+apply from: "${rootDir}/nexus.gradle"
 

@@ -1,0 +1,103 @@
+apply plugin: 'maven-publish'
+
+
+// 以下内容非必须
+tasks.register('androidJavadocs', Javadoc) {
+  // 设置源码所在的位置
+  source = android.sourceSets.main.java.sourceFiles
+}
+
+// 生成javadoc.jar
+tasks.register('androidJavadocsJar', Jar) {
+  // 指定文档名称
+  archiveClassifier = 'javadoc'
+  from androidJavadocs.destinationDir
+}
+
+// 生成sources.jar
+tasks.register('androidSourcesJar', Jar) {
+  archiveClassifier = 'sources'
+  from android.sourceSets.main.java.sourceFiles
+}
+
+// 产生相关配置文件的任务
+artifacts {
+  archives androidSourcesJar
+  archives androidJavadocsJar
+}
+
+def defaultProps = [
+    // 包信息
+    groupId    : "${ext.groupId}",
+    artifactId : "${ext.artifactId}",
+    versionId  : "${ext.versionId}",
+    type       : "${ext.pkgType}",
+    description: "${ext.description}",
+]
+
+def prop = new Properties()
+prop.putAll(defaultProps)
+prop.load(new FileReader("${getRootDir()}/nexus.properties"))
+
+afterEvaluate {
+  publishing {
+    //发布的 jar 包配置
+    publications {
+      snapshot(MavenPublication) {
+        groupId = prop['groupId']
+        artifactId = prop['artifactId']
+        version = prop['versionId']
+        // aar 文件
+        //artifact "${getBuildDir()}/outputs/aar/${project.name}-release.aar"
+
+        if (prop['type'] == null || "aar".equalsIgnoreCase(prop['type'])) {
+          afterEvaluate { artifact(tasks.getByName("bundleReleaseAar")) }
+        }
+        // 上传source，这样使用方可以看到方法注释
+        artifact androidSourcesJar
+
+        pom.withXml {
+          def dependenciesNode = asNode().appendNode("dependencies")
+          configurations.implementation.allDependencies.forEach() {
+            Dependency dependency ->
+              if (dependency.version != "unspecified" && dependency.name != "unspecified") {
+                def dependencyNode = dependenciesNode.appendNode('dependency')
+                dependencyNode.appendNode('groupId', dependency.group)
+                dependencyNode.appendNode('artifactId', dependency.name)
+                dependencyNode.appendNode('version', dependency.version)
+              }
+          }
+        }
+      }
+    }
+    //仓库地址配置
+    repositories {
+      maven {
+        url = "$versionId".endsWith('-SNAPSHOT') ? prop['snapshotRepoUrl'] : prop['releaseRepoUrl']
+        if (!url.toString().startsWith('file:/')) {
+          allowInsecureProtocol = true
+          credentials {
+            username prop['repoUsername'] as String
+            password prop['repoPassword'] as String
+          }
+        }
+      }
+    }
+  }
+}
+
+
+// 执行命令：gradle task publish
+/* local.properties 配置
+# 是否为本地仓库
+#localRepo=true
+localRepo=false
+# 用户名
+username=admin
+# 密码
+password=admin123
+# 本地仓库地址
+localRepoUrl=file://D:/home/maven/Repository
+# 远程仓库地址
+remoteRepoUrl=http://192.168.1.200:9001/repository/maven-snapshots/
+*/
