@@ -44,7 +44,7 @@ ext {
   versionId = "$version"
   pkgType = "aar"
   //artifactId = "$project.name"
-  artifactId = "android-serialport"
+  artifactId = "serialport"
   description = "$project.description"
 }
 
